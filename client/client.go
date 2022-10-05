@@ -228,10 +228,23 @@ func NewClientWithAddress(address string) (client Client, err error) {
 	if err != nil {
 		return nil, err
 	}
+	var rawConn net.Conn
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSeconds)*time.Second)
 	conn, err := grpc.DialContext(
 		ctx,
 		address,
+		grpc.WithDialer(func(addr string, timeout time.Duration) (newConn net.Conn, err error) {
+			d := net.Dialer{
+				Timeout:   timeout,
+				KeepAlive: time.Duration(30 * time.Second),
+			}
+			newConn, err = d.DialContext(ctx, "tcp", addr)
+			if err != nil {
+				return nil, err
+			}
+			rawConn = newConn
+			return newConn, nil
+		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUserAgent("dapr-sdk-go/"+version.SDKVersion),
 		grpc.WithBlock(),
@@ -244,7 +257,7 @@ func NewClientWithAddress(address string) (client Client, err error) {
 		logger.Println("client uses API token")
 	}
 
-	return NewClientWithConnection(conn), nil
+	return NewClientWithConnection(conn, rawConn), nil
 }
 
 func getClientTimeoutSeconds() (int, error) {
@@ -280,11 +293,11 @@ func NewClientWithSocket(socket string) (client Client, err error) {
 	if hasToken := os.Getenv(apiTokenEnvVarName); hasToken != "" {
 		logger.Println("client uses API token")
 	}
-	return NewClientWithConnection(conn), nil
+	return NewClientWithConnection(conn, nil), nil
 }
 
 // NewClientWithConnection instantiates Dapr client using specific connection.
-func NewClientWithConnection(conn *grpc.ClientConn) Client {
+func NewClientWithConnection(conn *grpc.ClientConn, rawConn net.Conn) Client {
 	return &GRPCClient{
 		connection:  conn,
 		protoClient: pb.NewDaprClient(conn),
@@ -295,6 +308,7 @@ func NewClientWithConnection(conn *grpc.ClientConn) Client {
 // GRPCClient is the gRPC implementation of Dapr client.
 type GRPCClient struct {
 	connection  *grpc.ClientConn
+	rawConn     net.Conn
 	protoClient pb.DaprClient
 	authToken   string
 }
@@ -347,4 +361,10 @@ func (c *GRPCClient) GrpcClient() pb.DaprClient {
 // GrpcClientConn returns the grpc.ClientConn object used by this client.
 func (c *GRPCClient) GrpcClientConn() *grpc.ClientConn {
 	return c.connection
+}
+
+// RawConn returns the underlying net.Conn object.
+// Note that this may be nil, depending on how the connection was initialized.
+func (c *GRPCClient) RawConn() net.Conn {
+	return c.rawConn
 }

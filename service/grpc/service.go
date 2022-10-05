@@ -14,6 +14,8 @@ limitations under the License.
 package grpc
 
 import (
+	"context"
+	"fmt"
 	"net"
 	"os"
 	"sync/atomic"
@@ -21,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 
+	"github.com/dapr/go-sdk/client"
 	pb "github.com/dapr/go-sdk/dapr/proto/runtime/v1"
 
 	"github.com/dapr/go-sdk/actor"
@@ -41,6 +44,40 @@ func NewService(address string) (s common.Service, err error) {
 	}
 	s = newService(lis)
 	return
+}
+
+// NewServiceFromClient creates a new Service without a listener, creating an outbound connection.
+// Note: the client object should not be used to make calls after this.
+func NewServiceFromClient(c *client.GRPCClient) (common.Service, error) {
+	protoClient := c.GrpcClient()
+	_, err := protoClient.ConnectAppCallback(context.TODO(), &pb.ConnectAppCallbackRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("error from ConnectAppCallback: %w", err)
+	}
+
+	// Switch the connection to a listener
+	l := listenerFromConn{
+		conn: c.RawConn(),
+	}
+	return newService(l), nil
+}
+
+// listenerFromConn implements net.Listener from an existing connection
+type listenerFromConn struct {
+	conn net.Conn
+}
+
+func (l listenerFromConn) Accept() (net.Conn, error) {
+	fmt.Println("Accepted remote", l.conn.RemoteAddr(), "local", l.conn.LocalAddr())
+	return l.conn, nil
+}
+
+func (l listenerFromConn) Close() error {
+	return l.conn.Close()
+}
+
+func (l listenerFromConn) Addr() net.Addr {
+	return l.conn.RemoteAddr()
 }
 
 // NewServiceWithListener creates new Service with specific listener.
