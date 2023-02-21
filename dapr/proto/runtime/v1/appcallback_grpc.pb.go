@@ -93,7 +93,7 @@ func (c *appCallbackClient) OnBindingEvent(ctx context.Context, in *BindingEvent
 }
 
 // AppCallbackServer is the server API for AppCallback service.
-// All implementations must embed UnimplementedAppCallbackServer
+// All implementations should embed UnimplementedAppCallbackServer
 // for forward compatibility
 type AppCallbackServer interface {
 	// Invokes service method with InvokeRequest.
@@ -109,10 +109,9 @@ type AppCallbackServer interface {
 	// User application can save the states or send the events to the output
 	// bindings optionally by returning BindingEventResponse.
 	OnBindingEvent(context.Context, *BindingEventRequest) (*BindingEventResponse, error)
-	mustEmbedUnimplementedAppCallbackServer()
 }
 
-// UnimplementedAppCallbackServer must be embedded to have forward compatible implementations.
+// UnimplementedAppCallbackServer should be embedded to have forward compatible implementations.
 type UnimplementedAppCallbackServer struct {
 }
 
@@ -131,7 +130,6 @@ func (UnimplementedAppCallbackServer) ListInputBindings(context.Context, *emptyp
 func (UnimplementedAppCallbackServer) OnBindingEvent(context.Context, *BindingEventRequest) (*BindingEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OnBindingEvent not implemented")
 }
-func (UnimplementedAppCallbackServer) mustEmbedUnimplementedAppCallbackServer() {}
 
 // UnsafeAppCallbackServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to AppCallbackServer will
@@ -292,22 +290,19 @@ func (c *appCallbackHealthCheckClient) HealthCheck(ctx context.Context, in *empt
 }
 
 // AppCallbackHealthCheckServer is the server API for AppCallbackHealthCheck service.
-// All implementations must embed UnimplementedAppCallbackHealthCheckServer
+// All implementations should embed UnimplementedAppCallbackHealthCheckServer
 // for forward compatibility
 type AppCallbackHealthCheckServer interface {
 	// Health check.
 	HealthCheck(context.Context, *emptypb.Empty) (*HealthCheckResponse, error)
-	mustEmbedUnimplementedAppCallbackHealthCheckServer()
 }
 
-// UnimplementedAppCallbackHealthCheckServer must be embedded to have forward compatible implementations.
+// UnimplementedAppCallbackHealthCheckServer should be embedded to have forward compatible implementations.
 type UnimplementedAppCallbackHealthCheckServer struct {
 }
 
 func (UnimplementedAppCallbackHealthCheckServer) HealthCheck(context.Context, *emptypb.Empty) (*HealthCheckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HealthCheck not implemented")
-}
-func (UnimplementedAppCallbackHealthCheckServer) mustEmbedUnimplementedAppCallbackHealthCheckServer() {
 }
 
 // UnsafeAppCallbackHealthCheckServer may be embedded to opt out of forward compatibility for this service.
@@ -361,6 +356,8 @@ var AppCallbackHealthCheck_ServiceDesc = grpc.ServiceDesc{
 type AppCallbackAlphaClient interface {
 	// Subscribes bulk events from Pubsub
 	OnBulkTopicEventAlpha1(ctx context.Context, in *TopicEventBulkRequest, opts ...grpc.CallOption) (*TopicEventBulkResponse, error)
+	// Invokes an actor using the Actors v2 APIs
+	OnActorInvokeV2(ctx context.Context, in *ActorInvokeV2Request, opts ...grpc.CallOption) (*ActorInvokeV2Response, error)
 }
 
 type appCallbackAlphaClient struct {
@@ -380,23 +377,35 @@ func (c *appCallbackAlphaClient) OnBulkTopicEventAlpha1(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *appCallbackAlphaClient) OnActorInvokeV2(ctx context.Context, in *ActorInvokeV2Request, opts ...grpc.CallOption) (*ActorInvokeV2Response, error) {
+	out := new(ActorInvokeV2Response)
+	err := c.cc.Invoke(ctx, "/dapr.proto.runtime.v1.AppCallbackAlpha/OnActorInvokeV2", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AppCallbackAlphaServer is the server API for AppCallbackAlpha service.
-// All implementations must embed UnimplementedAppCallbackAlphaServer
+// All implementations should embed UnimplementedAppCallbackAlphaServer
 // for forward compatibility
 type AppCallbackAlphaServer interface {
 	// Subscribes bulk events from Pubsub
 	OnBulkTopicEventAlpha1(context.Context, *TopicEventBulkRequest) (*TopicEventBulkResponse, error)
-	mustEmbedUnimplementedAppCallbackAlphaServer()
+	// Invokes an actor using the Actors v2 APIs
+	OnActorInvokeV2(context.Context, *ActorInvokeV2Request) (*ActorInvokeV2Response, error)
 }
 
-// UnimplementedAppCallbackAlphaServer must be embedded to have forward compatible implementations.
+// UnimplementedAppCallbackAlphaServer should be embedded to have forward compatible implementations.
 type UnimplementedAppCallbackAlphaServer struct {
 }
 
 func (UnimplementedAppCallbackAlphaServer) OnBulkTopicEventAlpha1(context.Context, *TopicEventBulkRequest) (*TopicEventBulkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OnBulkTopicEventAlpha1 not implemented")
 }
-func (UnimplementedAppCallbackAlphaServer) mustEmbedUnimplementedAppCallbackAlphaServer() {}
+func (UnimplementedAppCallbackAlphaServer) OnActorInvokeV2(context.Context, *ActorInvokeV2Request) (*ActorInvokeV2Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OnActorInvokeV2 not implemented")
+}
 
 // UnsafeAppCallbackAlphaServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to AppCallbackAlphaServer will
@@ -427,6 +436,24 @@ func _AppCallbackAlpha_OnBulkTopicEventAlpha1_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AppCallbackAlpha_OnActorInvokeV2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActorInvokeV2Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppCallbackAlphaServer).OnActorInvokeV2(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dapr.proto.runtime.v1.AppCallbackAlpha/OnActorInvokeV2",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppCallbackAlphaServer).OnActorInvokeV2(ctx, req.(*ActorInvokeV2Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AppCallbackAlpha_ServiceDesc is the grpc.ServiceDesc for AppCallbackAlpha service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -437,6 +464,10 @@ var AppCallbackAlpha_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "OnBulkTopicEventAlpha1",
 			Handler:    _AppCallbackAlpha_OnBulkTopicEventAlpha1_Handler,
+		},
+		{
+			MethodName: "OnActorInvokeV2",
+			Handler:    _AppCallbackAlpha_OnActorInvokeV2_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
