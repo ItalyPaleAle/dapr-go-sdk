@@ -88,7 +88,7 @@ type DaprClient interface {
 	// Terminate Workflow
 	TerminateWorkflowAlpha1(ctx context.Context, in *TerminateWorkflowRequest, opts ...grpc.CallOption) (*TerminateWorkflowResponse, error)
 	// Calls a method on an actor using Actors V2 APIs.
-	InvokeActorV2Alpha1(ctx context.Context, in *InvokeActorRequest, opts ...grpc.CallOption) (*InvokeActorResponse, error)
+	InvokeActorV2Alpha1(ctx context.Context, in *InvokeActorV2Alpha1Request, opts ...grpc.CallOption) (*InvokeActorV2Alpha1Response, error)
 	// Shutdown the sidecar
 	Shutdown(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -403,8 +403,8 @@ func (c *daprClient) TerminateWorkflowAlpha1(ctx context.Context, in *TerminateW
 	return out, nil
 }
 
-func (c *daprClient) InvokeActorV2Alpha1(ctx context.Context, in *InvokeActorRequest, opts ...grpc.CallOption) (*InvokeActorResponse, error) {
-	out := new(InvokeActorResponse)
+func (c *daprClient) InvokeActorV2Alpha1(ctx context.Context, in *InvokeActorV2Alpha1Request, opts ...grpc.CallOption) (*InvokeActorV2Alpha1Response, error) {
+	out := new(InvokeActorV2Alpha1Response)
 	err := c.cc.Invoke(ctx, "/dapr.proto.runtime.v1.Dapr/InvokeActorV2Alpha1", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -489,7 +489,7 @@ type DaprServer interface {
 	// Terminate Workflow
 	TerminateWorkflowAlpha1(context.Context, *TerminateWorkflowRequest) (*TerminateWorkflowResponse, error)
 	// Calls a method on an actor using Actors V2 APIs.
-	InvokeActorV2Alpha1(context.Context, *InvokeActorRequest) (*InvokeActorResponse, error)
+	InvokeActorV2Alpha1(context.Context, *InvokeActorV2Alpha1Request) (*InvokeActorV2Alpha1Response, error)
 	// Shutdown the sidecar
 	Shutdown(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 }
@@ -591,7 +591,7 @@ func (UnimplementedDaprServer) GetWorkflowAlpha1(context.Context, *GetWorkflowRe
 func (UnimplementedDaprServer) TerminateWorkflowAlpha1(context.Context, *TerminateWorkflowRequest) (*TerminateWorkflowResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TerminateWorkflowAlpha1 not implemented")
 }
-func (UnimplementedDaprServer) InvokeActorV2Alpha1(context.Context, *InvokeActorRequest) (*InvokeActorResponse, error) {
+func (UnimplementedDaprServer) InvokeActorV2Alpha1(context.Context, *InvokeActorV2Alpha1Request) (*InvokeActorV2Alpha1Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InvokeActorV2Alpha1 not implemented")
 }
 func (UnimplementedDaprServer) Shutdown(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -1171,7 +1171,7 @@ func _Dapr_TerminateWorkflowAlpha1_Handler(srv interface{}, ctx context.Context,
 }
 
 func _Dapr_InvokeActorV2Alpha1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InvokeActorRequest)
+	in := new(InvokeActorV2Alpha1Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1183,7 +1183,7 @@ func _Dapr_InvokeActorV2Alpha1_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/dapr.proto.runtime.v1.Dapr/InvokeActorV2Alpha1",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaprServer).InvokeActorV2Alpha1(ctx, req.(*InvokeActorRequest))
+		return srv.(DaprServer).InvokeActorV2Alpha1(ctx, req.(*InvokeActorV2Alpha1Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
